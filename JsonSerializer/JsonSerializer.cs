@@ -22,8 +22,12 @@ namespace JsonSerializer
 
         private static object SerializeInternal(object data)
         {
+            if (data is null)
+            {
+                return "null";
+            }
             Type dataType = data.GetType();
-            if (dataType.IsPrimitive)
+            if (dataType.IsPrimitive || dataType.Equals(typeof(string)))
             {
                 return data;
             }
@@ -31,10 +35,11 @@ namespace JsonSerializer
             IEnumerable<FieldInfo> fields = dataType.GetRuntimeFields();
             foreach (FieldInfo field in fields)
             {
-                if (field.GetValue(data) is Array || field.GetValue(data) is IEnumerable)
+                Object fieldValue = field.GetValue(data);
+                if (!(fieldValue is String) && (fieldValue is Array || fieldValue is IEnumerable))
                 {
                     List<object> dataList = new List<object>();
-                    IEnumerator enumerator = ((IEnumerable)field.GetValue(data)).GetEnumerator();
+                    IEnumerator enumerator = ((IEnumerable)fieldValue).GetEnumerator();
                     enumerator.Reset();
                     while (enumerator.MoveNext())
                     {
@@ -42,7 +47,10 @@ namespace JsonSerializer
                     }
                     output.Add(field.Name, dataList.ToArray());
                 }
-                output.Add(field.Name, SerializeInternal(field.GetValue(data)));
+                else
+                {
+                    output.Add(field.Name, SerializeInternal(fieldValue));
+                }
             }
             return output;
         }
