@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace JsonSerializer
 {
@@ -32,7 +33,7 @@ namespace JsonSerializer
                 return data;
             }
             Dictionary<string, object> output = new Dictionary<string, object>();
-            IEnumerable<FieldInfo> fields = dataType.GetRuntimeFields();
+            IEnumerable<FieldInfo> fields = GetAllFields(dataType);
             foreach (FieldInfo field in fields)
             {
                 Object fieldValue = field.GetValue(data);
@@ -53,6 +54,16 @@ namespace JsonSerializer
                 }
             }
             return output;
+        }
+
+        private static IEnumerable<FieldInfo> GetAllFields(Type type)
+        {
+            List<FieldInfo> fields = new List<FieldInfo>();
+            for (Type t = type; t != null; t = t.BaseType)
+            {
+                fields.AddRange(t.GetRuntimeFields());
+            }
+            return fields.GroupBy(field => field.Name).Select(group => group.First());
         }
     }
 }
